@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'nodejs-app:v1'
+        CONTAINER_NAME = 'nodejs-container'
+        APP_PORT = '3000'
+        HOST_PORT = '3000'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                // Optional, if you have tests
+                sh 'npm test || echo "No tests to run"'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME} ."
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    // Remove old container if exists
+                    sh "docker rm -f ${CONTAINER_NAME} || true"
+                    
+                    // Run container with port binding
+                    sh "docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${APP_PORT} ${IMAGE_NAME}"
+                }
+            }
+        }
+    }
+}
